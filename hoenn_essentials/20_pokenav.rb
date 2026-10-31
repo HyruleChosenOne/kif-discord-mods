@@ -926,14 +926,22 @@ module HoennContactsData
       types.group_by { |t| t }.max_by { |_, values| values.length }&.first
     end
     def overworld_sprite
-      map = if $game_map && $game_map.map_id == location_map_id
-              $game_map
-            elsif defined?(pbLoadMapData)
-              pbLoadMapData(location_map_id)
-            end
+      # A remote trainer need not have a live Game_Event. Read their home
+      # map's RPG::Event pages without setting up or changing the player's map.
+      if $game_map && $game_map.map_id == location_map_id
+        ev = $game_map.events[id[1]]
+        name = ev.character_name if ev && ev.respond_to?(:character_name)
+        return name if name && !name.empty?
+      end
+      map = load_data(sprintf("Data/Map%03d.rxdata", location_map_id))
       ev = map.events[id[1]] if map && map.respond_to?(:events)
-      name = ev.character_name if ev && ev.respond_to?(:character_name)
-      name && !name.empty? ? name : "000"
+      if ev && ev.respond_to?(:pages)
+        ev.pages.reverse_each do |page|
+          name = page.graphic.character_name if page && page.graphic
+          return name if name && !name.empty?
+        end
+      end
+      "000"
     rescue StandardError
       "000"
     end
@@ -948,6 +956,13 @@ module HoennContactsData
 end
 
 module HoennContactsListBridge
+  def can_be_listed(trainer)
+    # Registration is the authority for Hoenn contacts, wherever the player is.
+    # Leave the native rules available for any non-Hoenn contact objects.
+    return true if trainer.is_a?(HoennContactsData::Trainer)
+    super
+  end
+
   def list_contacts
     grouped = {}
     HoennContactsData.entries.each do |trainer|
