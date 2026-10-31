@@ -9,13 +9,16 @@ module HoennNativeKIF
   SPAWN_EVERY_FRAMES = 180
   SPAWN_RADIUS = 15
   POPULATION_LIMIT = 6
-  MIN_DISTANCE = 8
+  # Manhattan tile distance: protect 0-2 tiles; allow spawns from 3 onward.
+  MIN_DISTANCE = 3
+  NEAR_SPAWN_DISTANCE = 5
+  NEAR_SPAWN_CHANCE_PERCENT = 50
   NATURAL_FUSION_PERCENT = 5
   # Living Towns settings (land wildlife only)
   TOWN_WILDLIFE_ENABLED = true
   TOWN_POPULATION_LIMIT = 3
   TOWN_SPAWN_CHANCE_PERCENT = 45  # checked every SPAWN_EVERY_FRAMES
-  TOWN_MIN_DISTANCE = 6
+  TOWN_MIN_DISTANCE = 3
   TOWN_LEVEL_RANGE = (3..7)
   # Overrides for maps whose names do not contain Town/City.
   TOWN_MAP_IDS = []
@@ -53,6 +56,16 @@ module HoennNativeKIF
 
   def self.log(msg)
     echoln("[HoennNativeKIF] #{msg}") if defined?(echoln)
+  end
+
+  # Safari encounters belong to the game's Safari system.
+  def self.safari_map?
+    return false unless $game_map
+    return true if defined?(pbInSafari?) && pbInSafari?
+    meta = GameData::MapMetadata.try_get($game_map.map_id) if defined?(GameData::MapMetadata)
+    return true if meta && meta.safari_map
+    return true if defined?(is_hardcoded_safari_map) && is_hardcoded_safari_map($game_map.map_id)
+    false
   end
 
   def self.ready?
@@ -407,18 +420,60 @@ module HoennNativeKIF
     log("Town wildlife #{species} Lv#{level} on map #{$game_map.map_id}") if event
   end
 
-  def self.spawn_one
-    terrain = nil
-    position = nil
-    if ($PokemonGlobal.surfing || $PokemonGlobal.boat) && $PokemonEncounters.has_water_encounters?
-      terrain = :Water
-      position = find_random_surfable_coordinates_near_player(SPAWN_RADIUS, SPAWN_RADIUS, 3, 20)
-    elsif $PokemonEncounters.has_cave_encounters?
-      terrain = :Cave
-      position = find_random_walkable_coordinates_near_player(SPAWN_RADIUS, SPAWN_RADIUS, 3, 20)
-    elsif $PokemonEncounters.has_land_encounters?
-      position, terrain = find_random_tall_grass_coordinates_near_player(SPAWN_RADIUS, SPAWN_RADIUS, 3, 20)
+  # Native near-player helpers only sample a rectangle's perimeter. Search
+  # its interior ourselves; retain native terrain and passability checks.
+  def self.route_position(habitat)
+    return nil unless $game_map && $game_player
+    nearby = []
+    farther = []
+    x0 = [$game_player.x - SPAWN_RADIUS, 0].max
+    x1 = [$game_player.x + SPAWN_RADIUS, $game_map.width - 1].min
+    y0 = [$game_player.y - SPAWN_RADIUS, 0].max
+    y1 = [$game_player.y + SPAWN_RADIUS, $game_map.height - 1].min
+    (x0..x1).each do |x|
+      (y0..y1).each do |y|
+        distance = (x - $game_player.x).abs + (y - $game_player.y).abs
+        next if distance < MIN_DISTANCE
+        (distance <= NEAR_SPAWN_DISTANCE ? nearby : farther) << [x, y]
+      end
     end
+    groups = rand(100) < NEAR_SPAWN_CHANCE_PERCENT ? [nearby, farther] : [farther, nearby]
+    occupied = {}
+    $game_map.events.each_value { |ev| occupied[[ev.x, ev.y]] = true if ev }
+    groups.each do |group|
+      group.shuffle.each do |x, y|
+        next unless $game_map.valid?(x, y)
+        next if occupied[[x, y]]
+        terrain = habitat
+        tag = $game_map.terrain_tag(x, y)
+        if habitat == :Land
+          next unless tag && tag.land_wild_encounters
+          terrain = {:Grass_alt1 => :Land1, :Grass_alt2 => :Land2,
+                     :Grass_alt3 => :Land3, :TallGrass => :TallGrass}[tag.id] || :Land
+        elsif habitat == :Cave
+          next unless $game_map.playerPassable?(x, y, $game_player.direction)
+        elsif habitat == :Water
+          next unless tag && tag.can_surf
+        end
+        next unless can_spawn_pokemon_there(x, y, terrain)
+        next unless encounter_type_at([x, y], terrain)
+        return [[x, y], terrain]
+      end
+    end
+    nil
+  end
+
+  def self.spawn_one
+    habitat = nil
+    if ($PokemonGlobal.surfing || $PokemonGlobal.boat) && $PokemonEncounters.has_water_encounters?
+      habitat = :Water
+    elsif $PokemonEncounters.has_cave_encounters?
+      habitat = :Cave
+    elsif $PokemonEncounters.has_land_encounters?
+      habitat = :Land
+    end
+    return unless habitat
+    position, terrain = route_position(habitat)
     return unless position && terrain
     return if (position[0] - $game_player.x).abs + (position[1] - $game_player.y).abs < MIN_DISTANCE
     return unless can_spawn_pokemon_there(position[0], position[1], terrain)
@@ -428,7 +483,12 @@ module HoennNativeKIF
     wild = route_encounter(encounter_type)
     return unless wild && wild[0] && wild[1]
     wild = maybe_natural_fusion(wild, encounter_type)
-    spawn_overworld_pokemon(wild, position, terrain)
+    event = spawn_overworld_pokemon(wild, position, terrain)
+    if event
+      distance = (position[0] - $game_player.x).abs + (position[1] - $game_player.y).abs
+      log("Close spawn v0.12.37: #{terrain} at #{position[0]},#{position[1]} distance=#{distance}")
+    end
+    event
   end
 
   # Create a fusion using two rolls from the currently active encounters

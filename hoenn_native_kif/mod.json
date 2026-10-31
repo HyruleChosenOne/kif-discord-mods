@@ -1,7 +1,7 @@
 {
   "id": "hoenn_native_kif",
   "name": "Hoenn Native Overworld",
-  "version": "0.12.27-rc3",
+  "version": "0.13-rc4",
   "author": "TheMagnumChad",
   "description": "Living overworld Pokémon with native Hoenn AI, social interactions, and spontaneous fusion.",
   "requires_kif": ">=1.0.0",
