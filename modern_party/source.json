@@ -1,0 +1,10 @@
+{
+  "sources": {
+    "https://raw.githubusercontent.com/kwsch/PKHeX/master/PKHeX.Core/Resources/byte/personal/personal_sv": "0006ca2f5115e03f4bbec663173701b3cf520b8f2571d029e3184f9e2bb2b67f",
+    "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species.csv": "e66e2eeb25fd3836b0ebab6bf87bbf01960aa3c0555e2bac495fa8393c5e0c45"
+  },
+  "record_size": 80,
+  "base_exp_offset": 76,
+  "default_species": 1025,
+  "schema_source": "https://github.com/kwsch/PKHeX/blob/master/PKHeX.Core/PersonalInfo/Info/PersonalInfo9SV.cs"
+}
