@@ -2,6 +2,7 @@
   "id": "modern_party",
   "name": "Modern Party",
   "version": "0.1.7",
+  "author": "TheMagnumChad",
   "description": "Modern party EXP, move notices, manual evolution and follower auto battles.",
   "requires_kif": ">=1.2.13",
   "scripts": [
@@ -9,7 +10,7 @@
     "01_followers.rb",
     "02_party.rb",
     "04_field_battle.rb",
-    "05_continuous.rb"
+    "05_continuous.rb",
 	"06_evolution_ready.rb"
   ],
   "dependencies": [
