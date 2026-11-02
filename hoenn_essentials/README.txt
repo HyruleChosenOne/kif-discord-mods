@@ -1,4 +1,4 @@
 Hoenn Essentials
-Version: 1.0.4 RC2
+Version: 1.0.7 - RC3
 Developer: TheMagnumChad
-Hoenn PokéNav, trainer relationships, and dynamic weather with encounters.
+Hoenn PokéNav, trainer relationships, and weather encounters for KIF.

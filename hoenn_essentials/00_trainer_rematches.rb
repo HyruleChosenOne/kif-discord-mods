@@ -63,6 +63,10 @@ module HoennTrainerRematches
     entry[:rematches] = entry[:rematches].to_i + 1
     entry[:last_rematch] = Time.now.to_i
     increase_affinity(entry, player_won ? 8 : 3)
+    # A won rematch counts for the PokéNav challenge, too.
+    if player_won && $Trainer && $Trainer.respond_to?(:complete_challenge)
+      $Trainer.complete_challenge(:rematch_trainer)
+    end
     try_post_battle_gift(entry) if player_won
     # Hoenn trainers improve every time, even if they lost the battle.
     grow_team(entry, player_won ? 2 : 1)
