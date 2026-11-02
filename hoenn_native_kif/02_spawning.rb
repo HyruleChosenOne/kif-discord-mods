@@ -544,9 +544,19 @@ module HoennNativeKIF
     wild
   end
 
+  # GhostNPC Wandering Trainers 1.0.1 owns these IDs. Its orphan sweeper
+  # deletes any untracked event in them, and its spawner writes them directly.
+  # Reserve them even before GhostNPC loads or creates its first trainer.
+  def self.next_event_id
+    id = ($game_map.events.keys.max || 0) + 1
+    id = 7016 if id >= 7000 && id <= 7015
+    id = 8016 if id >= 8000 && id <= 8015
+    id
+  end
+
   # I forgot to catch pokemon off guard LMAO
   def self.make_event(map_id, position, event_class)
-    id = ($game_map.events.keys.max || 0) + 1
+    id = next_event_id
     raw = RPG::Event.new(position[0], position[1])
     raw.id = id
     raw.name = "HoennNativeWild"
