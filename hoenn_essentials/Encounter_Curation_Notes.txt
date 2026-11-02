@@ -1,4 +1,0 @@
-Prepackaged fixed records: 328
-Records with at least one visitor pool: 227
-Map names are known for only 11 IDs from debug logs. Other habitats are inferred from native encounters; they still require a map-name/layout audit.
-This build does not guarantee complete Classic evolution-family coverage.
