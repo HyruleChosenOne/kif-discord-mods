@@ -406,7 +406,7 @@ module KantoReloaded
           }],
           [TrainerAdaptation::ENABLED_SETTING, {
             :name => "Trainer Adaptation",
-            :description => "Save and apply three behavior-weighted changes after each win, then four after seven wins.",
+            :description => "Save and apply three behavior-weighted changes after each win, then four after seven wins. One can be a Counter Pokemon: added to a team with room (even with Team Expansion off), or swapped in.",
             :type => :toggle, :default => true, :priority => 90
           }],
           [TrainerRewards::ENABLED_SETTING, {

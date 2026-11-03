@@ -159,7 +159,7 @@ ER takes over (`DoubleAbilities.kif_er_active?` / `kif_er_owns?`):
 
 - A legal editable slot is selected with the battle RNG.
 - The replacement is battle-only.
-- Duplicate and hard-blacklisted results are rejected.
+- Duplicate results are rejected.
 
 ### Role Play
 
@@ -221,16 +221,8 @@ ER takes over (`DoubleAbilities.kif_er_active?` / `kif_er_owns?`):
 
 ### Wonder Guard
 
-- Wonder Guard remains unlimited when it is the Pokemon's only active ability.
-- A single Wonder Guard that the old Dynamic Abilities randomizer assigned in
-  an older save is the exception and keeps the same three-charge limit as a
-  two-ability holder. The randomizer itself is no longer part of the mod.
-- With two active abilities, Wonder Guard has three charges per battle.
-- One charge is consumed for each damaging move use that Wonder Guard blocks.
-- Multi-hit moves consume no more than one charge for the move use.
-- Type immunity, super-effective damage, and Mold Breaker do not consume a
-  charge.
-- At zero charges, Wonder Guard becomes inactive for the rest of the battle.
+- Wonder Guard works as normal, as one of two abilities or alone: it blocks
+  every damaging move that isn't super effective, for the whole battle.
 - A secondary Wonder Guard applies the same one-maximum-HP rule.
 
 ### Emergency Exit and Wimp Out
@@ -287,37 +279,9 @@ ER takes over (`DoubleAbilities.kif_er_active?` / `kif_er_owns?`):
 - The only legal slot or ability is selected automatically.
 - Family Pokemon ability data is not changed.
 
-## Blacklist
+## Pairs
 
-Only combinations that are technically unsafe, overpowered or produce extreme multiplicative
-behavior are hard-blacklisted.
+Any two different abilities can be paired. Only two pairings are refused:
 
-### Illusion + Imposter
-
-- Both abilities compete for displayed identity and transformation state.
-
-### Wonder Guard + Sturdy
-
-- One maximum HP can repeatedly reactivate Sturdy after direct attacks.
-
-### Huge Power + Pure Power
-
-- KIF applies both as separate two-times Attack multipliers.
-
-### Multiscale + Shadow Shield
-
-- Both independently halve full-HP damage and stack to one-quarter damage.
-
-### Huge Power/Pure Power + Water Bubble
-
-- The Attack multiplier and Water damage multiplier produce four-times damage
-  before STAB and other modifiers.
-
-### Shadow Tag + Perish Body
-
-- Contact can start a Perish countdown while Shadow Tag prevents switching,
-  creating unacceptable forced losses for Nuzlocke saves.
-
-### As One Variants
-
+- The same ability on both sides counts as one ability.
 - More than one As One variant is treated as a semantic duplicate.

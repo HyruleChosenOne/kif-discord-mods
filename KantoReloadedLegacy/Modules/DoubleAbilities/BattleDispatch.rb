@@ -153,50 +153,20 @@ module KantoReloaded
               owner,
               arguments[0]
             )
-              if KantoReloaded::DoubleAbilities::BattleDispatch.skip_exhausted_wonder_guard?(
+              next KantoReloaded::DoubleAbilities::BattleDispatch.invoke_handler(
+                hook,
                 method_name,
-                owner,
-                arguments[0]
+                arguments
               )
-                next false
-              end
-              result =
-                KantoReloaded::DoubleAbilities::BattleDispatch.invoke_handler(
-                  hook,
-                  method_name,
-                  arguments
-                )
-              KantoReloaded::DoubleAbilities::BattleDispatch.consume_wonder_guard_if_needed(
-                method_name,
-                owner,
-                arguments,
-                result
-              )
-              next result
             end
             runtime.clear_pending_splash(owner)
 
-            primary_result = nil
-            if KantoReloaded::DoubleAbilities::BattleDispatch.skip_exhausted_wonder_guard?(
-              method_name,
-              owner,
-              arguments[0]
-            )
-              primary_result = false
-            else
-              primary_result =
-                KantoReloaded::DoubleAbilities::BattleDispatch.invoke_handler(
-                  hook,
-                  method_name,
-                  arguments
-                )
-              KantoReloaded::DoubleAbilities::BattleDispatch.consume_wonder_guard_if_needed(
+            primary_result =
+              KantoReloaded::DoubleAbilities::BattleDispatch.invoke_handler(
+                hook,
                 method_name,
-                owner,
-                arguments,
-                primary_result
+                arguments
               )
-            end
 
             next primary_result if KantoReloaded::DoubleAbilities::BattleDispatch.native_secondary_handler?(
               method_name
@@ -224,12 +194,6 @@ module KantoReloaded
                 secondary_arguments
               )
             end
-            KantoReloaded::DoubleAbilities::BattleDispatch.consume_wonder_guard_if_needed(
-              method_name,
-              owner,
-              secondary_arguments,
-              secondary_result
-            )
             if KantoReloaded::DoubleAbilities::BattleDispatch.boolean_handler?(method_name) &&
                secondary_result &&
                runtime.splash_serial(owner) == splash_serial
@@ -411,33 +375,6 @@ module KantoReloaded
           )
         end
         result
-      end
-
-      def self.skip_exhausted_wonder_guard?(method_name, owner, ability)
-        return false unless method_name == :triggerMoveImmunityTargetAbility
-        data = GameData::Ability.try_get(ability)
-        data && data.id == :WONDERGUARD &&
-          KantoReloaded::DoubleAbilities::BattleRuntime.wonder_guard_exhausted?(owner)
-      rescue
-        false
-      end
-
-      def self.consume_wonder_guard_if_needed(method_name, owner, arguments, result)
-        return unless method_name == :triggerMoveImmunityTargetAbility
-        return unless result
-        ability = GameData::Ability.try_get(arguments[0])
-        return unless ability && ability.id == :WONDERGUARD
-        user = arguments[1]
-        move = arguments[3]
-        battle = arguments[5]
-        KantoReloaded::DoubleAbilities::BattleRuntime.consume_wonder_guard_charge(
-          owner,
-          user,
-          move,
-          battle
-        )
-      rescue
-        nil
       end
     end
   end

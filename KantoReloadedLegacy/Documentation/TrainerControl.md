@@ -87,6 +87,10 @@ battles are excluded.
   functional battle inventory rather than assigned as held items.
 - Counter Pokemon are eligible after the first win rather than waiting for four
   victories.
+- A Counter Pokemon joins any trainer's team that has room (fewer than six),
+  whether Team Expansion is on or off, Gym Leaders, Elite Four members and
+  Champions included. On an ordinary trainer's full team it takes the place of
+  the weakest member that isn't the ace.
 - Authored Pokemon may be replaced only for ordinary trainers. Gym Leaders,
   Bosses, Elite Four members, and Champions keep their authored roster members.
 - Counter Pokemon retain the active Gym type. Trainer-theme restrictions apply

@@ -11,16 +11,6 @@ module KantoReloaded
     CAPABILITY_ID = :kanto_reloaded_double_abilities
     CAPABILITY_VERSION = 1
 
-    HARD_BLACKLIST = [
-      [:ILLUSION, :IMPOSTER],
-      [:WONDERGUARD, :STURDY],
-      [:HUGEPOWER, :PUREPOWER],
-      [:MULTISCALE, :SHADOWSHIELD],
-      [:HUGEPOWER, :WATERBUBBLE],
-      [:PUREPOWER, :WATERBUBBLE],
-      [:SHADOWTAG, :PERISHBODY]
-    ].freeze
-
     AS_ONE_VARIANTS = [:ASONE, :ASONEGLASTRIER, :ASONESPECTRIER].freeze
 
     class << self
@@ -156,10 +146,7 @@ module KantoReloaded
         second_id = ability_id(second)
         return true if second_id.nil?
         return false if first_id.nil? || first_id == second_id
-        return false if as_one_duplicate?(first_id, second_id)
-        !HARD_BLACKLIST.any? do |pair|
-          pair.include?(first_id) && pair.include?(second_id)
-        end
+        !as_one_duplicate?(first_id, second_id)
       rescue
         false
       end
@@ -169,11 +156,7 @@ module KantoReloaded
         second_id = ability_id(second)
         return "Abilities must be different." if first_id && first_id == second_id
         return "Only one As One variant can be active." if as_one_duplicate?(first_id, second_id)
-        pair = HARD_BLACKLIST.find do |entry|
-          entry.include?(first_id) && entry.include?(second_id)
-        end
-        return nil unless pair
-        "#{ability_name(pair[0])} and #{ability_name(pair[1])} cannot be paired."
+        nil
       rescue
         "That ability pair is not available."
       end

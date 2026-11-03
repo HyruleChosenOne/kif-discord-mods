@@ -300,10 +300,6 @@ module KantoReloaded
             :reattach => true
           ) do |hook, check_ability, *arguments|
             runtime = KantoReloaded::DoubleAbilities::BattleRuntime
-            if runtime.wonder_guard_exhausted?(self) &&
-               runtime.check_includes?(check_ability, :WONDERGUARD)
-              next runtime.matches_active_non_wonder_guard?(self, check_ability)
-            end
             result = hook.call
             if result
               runtime.clear_pending_splash(self)
@@ -452,9 +448,6 @@ module KantoReloaded
             clear_secondary_cache(battler)
             validate_battle_pair(battler)
           end
-          if limited_wonder_guard?(battler)
-            battler.instance_variable_set(:@kr_wonder_guard_charges, 3)
-          end
         rescue StandardError => e
           KantoReloaded::Log.exception(
             "Double Abilities battler sync failed",
@@ -468,9 +461,6 @@ module KantoReloaded
             :@kr_double_abilities_disabled,
             :@kr_double_abilities_transformed,
             :@kr_triggering_ability_slot,
-            :@kr_wonder_guard_charges,
-            :@kr_wonder_guard_exhausted,
-            :@kr_wonder_guard_last_charge_key,
             ELIGIBILITY_IVAR,
             CONFIG_VERSION_IVAR,
             SECONDARY_CACHE_IVAR,
@@ -524,8 +514,6 @@ module KantoReloaded
         def secondary_active?(battler, ignore_fainted = false)
           return false unless eligible_battler?(battler)
           return false unless secondary_id(battler)
-          return false if wonder_guard_exhausted?(battler) &&
-                          secondary_id(battler) == :WONDERGUARD
           battler.abilityActive?(ignore_fainted)
         rescue
           false
@@ -784,76 +772,6 @@ module KantoReloaded
           false
         end
 
-        def matches_active_non_wonder_guard?(battler, check)
-          return false unless battler.abilityActive?
-          matched = active_ids(battler).reject { |id| id == :WONDERGUARD }.find do |id|
-            check_includes?(check, id)
-          end
-          if matched && matched == secondary_id(battler)
-            mark_pending_splash(battler, matched, 2)
-          elsif matched
-            clear_pending_splash(battler)
-          end
-          !matched.nil?
-        rescue
-          false
-        end
-
-        def wonder_guard_exhausted?(battler)
-          !!battler.instance_variable_get(:@kr_wonder_guard_exhausted)
-        rescue
-          false
-        end
-
-        def randomized_single_wonder_guard?(battler)
-          return false unless battler
-          return false if eligible_battler?(battler)
-          pokemon = battler.respond_to?(:pokemon) ? battler.pokemon : nil
-          return false unless pokemon
-          return false unless pokemon.instance_variable_get(
-            :@kr_randomized_wonder_guard
-          )
-          ability = GameData::Ability.try_get(
-            battler.instance_variable_get(:@ability_id)
-          )
-          ability && ability.id == :WONDERGUARD
-        rescue
-          false
-        end
-
-        def limited_wonder_guard?(battler)
-          if eligible_battler?(battler)
-            ids = active_ids(battler)
-            return ids.include?(:WONDERGUARD) && ids.length > 1
-          end
-          randomized_single_wonder_guard?(battler)
-        rescue
-          false
-        end
-
-        def consume_wonder_guard_charge(battler, user, move, battle)
-          return unless limited_wonder_guard?(battler)
-          return unless damaging_move?(move)
-          key = [
-            battle && battle.respond_to?(:turnCount) ? battle.turnCount : 0,
-            user && user.respond_to?(:index) ? user.index : 0,
-            move && move.respond_to?(:id) ? move.id : move.object_id
-          ]
-          return if battler.instance_variable_get(:@kr_wonder_guard_last_charge_key) == key
-          battler.instance_variable_set(:@kr_wonder_guard_last_charge_key, key)
-          charges = battler.instance_variable_get(:@kr_wonder_guard_charges).to_i
-          charges = 3 if charges <= 0 && !wonder_guard_exhausted?(battler)
-          charges -= 1
-          battler.instance_variable_set(:@kr_wonder_guard_charges, charges)
-          battler.instance_variable_set(:@kr_wonder_guard_exhausted, true) if charges <= 0
-        rescue StandardError => e
-          KantoReloaded::Log.exception(
-            "Wonder Guard charge update failed",
-            e,
-            channel: :modules
-          ) if defined?(KantoReloaded::Log)
-        end
-
         private
 
         def ability_id(value)
@@ -861,14 +779,6 @@ module KantoReloaded
           data ? data.id : nil
         rescue
           nil
-        end
-
-        def damaging_move?(move)
-          return move.damagingMove? if move.respond_to?(:damagingMove?)
-          return move.damaging_move? if move.respond_to?(:damaging_move?)
-          true
-        rescue
-          true
         end
 
         def graphics_frame

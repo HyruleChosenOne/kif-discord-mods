@@ -1,5 +1,19 @@
 # Kanto Reloaded Legacy Changelog
 
+## Kanto Reloaded Legacy Update #9 - Hotfixes
+
+v1.6.1
+
+Release Date: November 2, 2026
+
+### SUMMARY
+Double Abilities has no banned pairs any more, Wonder Guard works as normal again, and Trainer Adaptation's setting now says what it can do to a team.
+
+### CHANGES
+- Double Abilities no longer bans any pair of abilities: Illusion + Imposter, Wonder Guard + Sturdy, Huge Power + Pure Power, Multiscale + Shadow Shield, Huge Power or Pure Power + Water Bubble, and Shadow Tag + Perish Body can all be paired now. The same ability twice still counts once
+- Wonder Guard is no longer limited to blocking three damaging moves per battle. As one of two abilities, it blocks every damaging move that isn't super effective for the whole battle
+- Trainer Adaptation's description now properly says one of its changes can be a Counter Pokemon, added to a team with room even with Team Expansion off, or swapped in.
+
 ## Kanto Reloaded Legacy Update #8 - KIF Support
 
 v1.6.0

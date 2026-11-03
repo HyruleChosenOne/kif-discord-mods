@@ -1,7 +1,7 @@
 {
   "name": "Kanto Reloaded Legacy",
   "id": "kantoreloadedlegacy",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "author": "Stonewall",
   "requires_kif": ">=1.0.7",
   "description": "The original Kanto Reloaded, made to work on KIF while the new Kanto Reloaded is built. It can't run together with Kanto Reloaded.",
