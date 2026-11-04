@@ -19,7 +19,8 @@
     "24_challenge_screen.rb",
     "25_suite_fixes.rb",
     "26_rc2_settings.rb",
-	"27_multiplayer_weather.rb"
+	"27_multiplayer_weather.rb",
+    "28_multiplayer_clock.rb"
   ],
   "enabled": true
 }
