@@ -1,3 +1,4 @@
+# A private cosmetic follower; scripted companions always take precedence.
 module KIFModernFollower
   NAME='ModernPartyFollower'
   DELTAS={2=>[0,1],4=>[-1,0],6=>[1,0],8=>[0,-1]}
@@ -18,6 +19,7 @@ module KIFModernFollower
     return if defined?(KIFModernFieldBattle) && KIFModernFieldBattle.deployed?(follower)
     origin=step_origin
     tile=origin if !instant && origin && origin!=[leader.map.map_id,leader.x,leader.y]
+    # Ordinary turns should leave an adjacent follower in place.
     if !tile && !instant && follower.map.map_id==leader.map.map_id &&
        (follower.x-leader.x).abs+(follower.y-leader.y).abs==1
       return
@@ -41,6 +43,8 @@ module KIFModernFollower
       direction=dx>0 ? 6 : dx<0 ? 4 : dy>0 ? 2 : 8
       follower.move_generic(direction)
     elsif dx!=0 || dy!=0
+      # Corners/ledges can leave a diagonal gap. This is a tile the player
+      # actually occupied, rather than a guessed rear tile or the player tile.
       pbFancyMoveTo(follower,tile[1],tile[2],leader)
     end
     follower.direction=leader.direction
@@ -59,9 +63,8 @@ module KIFModernFollower
     true
   end
   def self.triggered?
-    keyboard=Input.triggerex?(:LCTRL)
-    buttons=Input::Controller.connected? ? Input::Controller.raw_button_states : []
-    value=buttons[10] # SDL right shoulder / Xbox RB (KIF::Keys::PAD_BUTTONS).
+    keyboard=KIFModernInput.key_triggered?(:LCTRL)
+    value=KIFModernInput.controller_value(:raw_button_states,10) # SDL right shoulder / Xbox RB.
     down=value && value!=0
     edge=down && !@rb_down;@rb_down=down
     keyboard || edge
@@ -131,13 +134,40 @@ Game_Player.prepend(Module.new do
   end
 end)
 Events.onMapUpdate += proc { |_sender,_event| KIFModernFollower.tick }
+module KIFModernSave
+  def self.without_ha_markers
+    detached=[]
+    maps=($MapFactory && $MapFactory.respond_to?(:maps)) ? $MapFactory.maps.dup : []
+    maps << $game_map if $game_map
+    maps.compact.uniq.each do |map|
+      next unless map.events
+      map.events.each_value do |event|
+        next unless event.is_a?(OverworldPokemonEvent)
+        marker=event.instance_variable_get(:@hno_ha_marker)
+        next unless marker.is_a?(Sprite)
+        detached << [event,marker]
+        event.instance_variable_set(:@hno_ha_marker,nil)
+      end
+    end
+    yield
+  ensure
+    # Keep the live glint and its timing intact, including failed saves.
+    (detached || []).each { |event,marker| event.instance_variable_set(:@hno_ha_marker,marker) }
+  end
+end
+# Keep transient battle references out of saves; ordinary follower rows are native data.
 Game.singleton_class.prepend(Module.new do
   def save(*args,**kwargs,&block)
     KIFModernFieldBattle.cancel if defined?(KIFModernFieldBattle)
-    super
+    KIFModernSave.without_ha_markers { super }
   end
-  def load(*args,&block)
-    KIFModernFieldBattle.cancel if defined?(KIFModernFieldBattle)
+end)
+# Camera mods may alias Game.load after this mod loads. Prepending that same
+# method makes their alias call back into our wrapper's super forever. Reset
+# at native save-value loading instead, leaving Game.load's alias chain intact.
+SaveData.singleton_class.prepend(Module.new do
+  def load_all_values(*args,&block)
+    KIFModernFieldBattle.reset_for_load if defined?(KIFModernFieldBattle)
     super
   end
 end)

@@ -1,5 +1,15 @@
+# Session state is transient. The follower remains summoned after stopping attacks.
 module KIFModernContinuous
   def active?; !!@session; end
+  def reset_for_load
+    # Loading discards the old map. Do not invoke cancellation hooks against
+    # its actors while another mod is replacing the save's game objects.
+    @session=nil
+    @state=nil
+    @trigger_down=false
+    @hud.dispose if @hud && !@hud.disposed?
+    @hud=nil
+  end
   def command
     return begin_return if @session
     return false unless safe? && $PokemonSystem.kmp_field_battles==1 && follower && mon && mon.able?
@@ -9,8 +19,8 @@ module KIFModernContinuous
     true
   end
   def cancel
-    clear_deployment
     @session=nil
+    clear_deployment
     true
   end
   def begin_return
@@ -28,14 +38,17 @@ module KIFModernContinuous
     true
   end
   def clear_deployment
-    if @state
-      if @state[:target]
-        @state[:target].instance_variable_set(:@kmp_field_reserved,false)
-        @state[:target].opacity=@state[:old_opacity]
-      end
-      @state[:follower].through=@state[:old_through]
-    end
+    # Detach before restoring actors: other mods may call cancellation from
+    # an opacity/through callback. A nested call must see no deployment.
+    deployment=@state
     @state=nil
+    if deployment
+      if deployment[:target]
+        deployment[:target].instance_variable_set(:@kmp_field_reserved,false)
+        deployment[:target].opacity=deployment[:old_opacity]
+      end
+      deployment[:follower].through=deployment[:old_through]
+    end
   end
   def session_safe?
     safe? && $PokemonSystem.kmp_field_battles==1 &&

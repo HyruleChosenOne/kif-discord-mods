@@ -1,3 +1,4 @@
+# Modern party progression. Exact imported identities stay in native data APIs.
 module KIFModernParty
   BASE_EXP = JSON.parse(File.read(File.join(__dir__,'base-exp.json'))).each_with_object({}) { |(key,value),out| out[key.to_s]=value }
   class << self
@@ -11,10 +12,10 @@ module KIFModernParty
   end
   def self.round_exp(n);(n.ceil-n==0.5) ? n.floor : n.round;end
   def self.reward(pokemon, foe, participated, auto=false)
+    # Gen IX integer base division, scaled by each recipient's own level.
     divisor=participated ? 1 : 2
     base=(yield_for(foe.species_data)*foe.level/(5*divisor)).floor
     exp=(base*((2.0*foe.level+10)/(foe.level+pokemon.level+10))**2.5).floor+1
-    return [exp/10,1].max if auto
     outsider=pokemon.owner.id!=$Trainer.id
     if outsider
       foreign=pokemon.owner.language!=0 && pokemon.owner.language!=$Trainer.language
@@ -23,7 +24,7 @@ module KIFModernParty
     exp=round_exp(exp*1.5) if pokemon.hasItem?(:LUCKYEGG)
     exp=round_exp(exp*4915.0/4096) if pokemon.happiness>=220
     exp=round_exp(exp*4915.0/4096) if pokemon.check_evolution_on_level_up(false)
-    exp
+    auto ? [exp*KIFModernParty.field_exp_percent/100,1].max : exp
   end
   def self.unlock(pokemon,moves)
     fresh=Array(moves).uniq.select { |id| GameData::Move.exists?(id) && !pokemon.hasMove?(id) }
@@ -50,6 +51,7 @@ module KIFModernParty
     {pokemon:pokemon,old_exp:before[0],old_level:before[1],old_fraction:before[2],exp:gained,moves:moves}
   end
   def self.show(rows,scene=nil)
+    # A double KO still gets one card per Pokemon, with combined rewards.
     merged={}
     rows.compact.each do |row|
       if merged[row[:pokemon].object_id]
@@ -75,6 +77,7 @@ module KIFModernParty
   end
 end
 
+# Expose the optional sharing override only during native EXP distribution.
 PokemonBag.prepend(Module.new do
   def pbHasItem?(item,*args)
     return true if item==:EXPALL && KIFModernParty.sharing && KIFModernParty.always_share?
@@ -86,6 +89,7 @@ PokeBattle_Battle.prepend(Module.new do
     previous=KIFModernParty.sharing;KIFModernParty.sharing=true
     @kmp_exp_rows=[]
     result=super
+    # All recipients animate together; native owner/EV/switch-out gates remain.
     KIFModernParty.show(@kmp_exp_rows,@scene)
     result
   ensure
@@ -124,6 +128,8 @@ PokeBattle_Battle.prepend(Module.new do
       end
       battler.pbUpdate(false);@scene.pbRefreshOne(battler.index)
     end
+    # Active battlers keep native EXP dialogue/bar. Their left card is only
+    # needed for a level-up or new-move lightbulb; benches always use the HUD.
     if row && (!battler || mon.level>row[:old_level] || !row[:moves].empty?)
       (@kmp_exp_rows||=[])<<row
     end
@@ -131,6 +137,8 @@ PokeBattle_Battle.prepend(Module.new do
   end
 end)
 
+# Native battle/candy checks already defer evolution when this flag is true.
+# The party action still runs the full native evolution scene and conditions.
 Pokemon.prepend(Module.new do
   def evolve_from_party;true;end
   def check_evolution_on_level_up(prompt_choice=true)
@@ -151,6 +159,7 @@ Pokemon.prepend(Module.new do
       return nil unless [0,1].include?(choice)
       side=choice==0 ? 1 : 0
     end
+    # Eligibility-only calls are deterministic and never ask or consume RNG.
     body=side==0 ? targets[0] : parents[0]
     head=side==1 ? targets[1] : parents[1]
     getFusionSpecies(body,head).id
@@ -223,6 +232,7 @@ PokemonPartyScreen.prepend(Module.new do
   end
 end)
 
+# Lightweight pixel UI using native species artwork, including forms/fusions.
 class KIFModernExpHUD
   attr_reader :age, :cards, :notice
   WIDTH=188
@@ -254,6 +264,8 @@ class KIFModernExpHUD
     bmp.draw_text(x,y,w,22,string,align)
   end
   def update_audio
+    # One shared EXP voice, rather than six overlapping copies. Active battle
+    # bars already play their own native EXP/level sounds before this HUD.
     if @age==19 && @rows.any? { |r| !r[:native_active] && r[:exp]>0 }
       pbSEPlay('Pkmn exp gain')
     end
@@ -266,10 +278,13 @@ class KIFModernExpHUD
       @level_sound_pending=true if level>@audio_levels[i]
       @audio_levels[i]=level
     end
+    # Nearby simultaneous level crossings share a cue; a large multi-level
+    # award must not restart the same sound on every render frame.
     if @level_sound_pending && @age-(@level_sound_at || -1000)>=6
       pbSEPlay('Pkmn exp full');@level_sound_at=@age;@level_sound_pending=false
     end
     pbSEPlay('Pkmn move learnt') if @age==85 && !@messages.empty?
+    # Subsequent move notices each get their cue; the first was the lightbulb.
     if @age>150 && (@age-150)%90==0 && (@age-150)/90<@messages.length
       pbSEPlay('Pkmn move learnt')
     end
@@ -299,6 +314,7 @@ class KIFModernExpHUD
       unless row[:native_active]
         text(b,"+#{row[:exp]}",110,15,74,16,evolution_ready ? ink : gold,2)
         b.fill_rect(5,HEIGHT-5,WIDTH-10,3,Color.new(12,20,27))
+        # Cross each actual level boundary before settling at the final fraction.
         fraction=t>=1 ? mon.exp_fraction : progress%1.0
         b.fill_rect(5,HEIGHT-5,((WIDTH-10)*fraction).round,3,cyan)
       end

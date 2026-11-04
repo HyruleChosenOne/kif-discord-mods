@@ -1,3 +1,4 @@
+# Experimental field battles: only actual roaming actors and cosmetic followers.
 KIF::Options.define(:kmp_field_battles,1,:save)
 KIF::Options.add(:others,:save) do
   EnumOption.new('Follower auto-battle',['Off','On'],proc { $PokemonSystem.kmp_field_battles },
@@ -98,10 +99,9 @@ module KIFModernFieldBattle
     return unless @state && @state[:phase]==:fight && !@state[:rewarded]
     @state[:rewarded]=true
     s=@state;hero=s[:pokemon];foe=s[:target].pokemon
-    attack=hero.level*(0.5+type_score(hero,foe))*(0.5+hero.hp.to_f/hero.totalhp)
-    defense=foe.level*(0.5+type_score(foe,hero))
-    won=attack>=defense
-    damage=won ? [1,(hero.totalhp*0.08*defense/[attack,1].max).ceil].max : [1,(hero.totalhp*0.35).ceil].max
+    simulation=KIFModernAutoCombat.simulate(hero,foe)
+    won=simulation[:won]
+    damage=simulation[:damage]
     hero.hp=[hero.hp-damage,1].max # Retreat instead of fainting in a quick battle.
     if won
       foe_copy=foe.clone
@@ -112,6 +112,8 @@ module KIFModernFieldBattle
         if cap
           room=KIF::LevelCap.room(p)
           p.kif_banked_exp=p.kif_banked_exp.to_i+[amount-room,0].max if KIF::LevelCap.behavior==0
+          # Field rewards never bypass a selected cap; RC conversion uses the
+          # same level crossings as battle rewards, with native bag overflow.
           if KIF::LevelCap.behavior==2
             total=p.growth_rate.add_exp(p.exp,amount)
             candies=[p.growth_rate.level_from_exp(total)-[p.level,cap].max,0].max
@@ -131,16 +133,18 @@ module KIFModernFieldBattle
       @hud.dispose if @hud && !@hud.disposed?
       unless rows.empty?
         @hud=KIFModernExpHUD.new(rows)
+        # Leave the centered arrival title clear; six cards still end above
+        # the automatic move notice at the bottom of the field screen.
         @hud.cards.each { |card| card.y+=44 }
       end
     end
-    @last_result={won:won,species:foe.species,damage:damage}
+    @last_result={won:won,species:foe.species,damage:damage,simulation:simulation}
     s[:target].instance_variable_set(:@kmp_field_reserved,false) if won
     s[:phase]=:return;s[:age]=0
   end
   def self.triggered?
-    keyboard=Input.triggerex?(:LALT)
-    axis=Input::Controller.connected? ? Input::Controller.axes_trigger[1].to_f : 0
+    keyboard=KIFModernInput.key_triggered?(:LALT)
+    axis=KIFModernInput.controller_value(:axes_trigger,1).to_f
     down=axis>0.5;edge=down && !@trigger_down;@trigger_down=down
     keyboard || edge
   end

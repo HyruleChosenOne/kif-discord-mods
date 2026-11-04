@@ -1,8 +1,8 @@
 {
   "id": "modern_party",
   "name": "Modern Party",
-  "version": "0.1.7",
-  "author": "TheMagnumChad",
+  "version": "0.2.0",
+  "author": "TheMagnumChad"
   "description": "Modern party EXP, move notices, manual evolution and follower auto battles.",
   "requires_kif": ">=1.2.13",
   "scripts": [
@@ -11,7 +11,9 @@
     "02_party.rb",
     "04_field_battle.rb",
     "05_continuous.rb",
-	"06_evolution_ready.rb"
+	"06_evolution_ready.rb",
+	"07_auto_combat.rb",
+	"08_multiplayer.rb"
   ],
   "dependencies": [
     "hoenn_native_kif"
