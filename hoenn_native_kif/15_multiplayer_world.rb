@@ -182,6 +182,34 @@ module HoennMultiplayer
     end
     ev.direction=d
   end
+  def self.paused_replica?(ev)
+    return false unless active? && !owner? && $game_temp && $game_temp.in_menu && !$game_temp.in_battle
+    @replicas[ev.instance_variable_get(:@hmp_uid)].equal?(ev) && ours?(ev)
+  end
+  def self.animate_paused_replica(ev)
+    # Game_Character#update suppresses movement whenever in_menu is true.
+    # Advance only the authoritative replica's pixels/animation, never its
+    # movement commands, AI, encounter checks or step-event callbacks.
+    frame=Graphics.frame_count
+    return if ev.instance_variable_get(:@hmp_pause_visual_frame)==frame
+    ev.instance_variable_set(:@hmp_pause_visual_frame,frame)
+    moving=ev.moving?
+    ev.instance_variable_set(:@moved_last_frame,ev.instance_variable_get(:@moved_this_frame))
+    ev.instance_variable_set(:@moved_this_frame,moving)
+    if moving
+      speed=ev.move_speed_real
+      {:@real_x=>ev.x*Game_Map::REAL_RES_X, :@real_y=>ev.y*Game_Map::REAL_RES_Y}.each do |ivar,target|
+        value=ev.instance_variable_get(ivar)
+        delta=target-value
+        ev.instance_variable_set(ivar,delta.abs<=speed ? target : value+(delta>0 ? speed : -speed))
+      end
+      ev.calculate_bush_depth
+    end
+    if ev.step_anime || (moving && ev.walk_anime)
+      ev.instance_variable_set(:@anime_count,ev.instance_variable_get(:@anime_count).to_f+1)
+    end
+    ev.update_pattern
+  end
   def self.apply_world
     return if owner? || !@latest
     ids=@latest.map(&:first)
@@ -364,7 +392,9 @@ Game_Event.prepend(Module.new do
 end)
 OverworldPokemonEvent.prepend(Module.new do
   def update
-    if HoennMultiplayer.frozen?(self)
+    if HoennMultiplayer.paused_replica?(self)
+      HoennMultiplayer.animate_paused_replica(self)
+    elsif HoennMultiplayer.frozen?(self)
       # Animate/interpolate native coordinates without running local AI,
       # encounters, despawn distance, social fusion or autonomous routes.
       Game_Character.instance_method(:update).bind(self).call
