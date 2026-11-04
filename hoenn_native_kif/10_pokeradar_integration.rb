@@ -157,6 +157,7 @@ module HoennNativeKIFRadar
   end
 
   def self.tick
+    return if HoennNativeKIF.safari_map?
     return unless $game_map && $game_map.events
     map = $game_map.object_id
     if @map_identity != map

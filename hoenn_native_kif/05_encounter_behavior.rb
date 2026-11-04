@@ -75,3 +75,16 @@ module HoennNativeKIFWildItemEvent
   end
 end
 OverworldPokemonEvent.prepend(HoennNativeKIFWildItemEvent)
+
+# PIF 6.9 now calls pbGenerateWildPokemon during overworld setup. Its item
+# check is already complete even when the result is no item. Mark the exact
+# returned Pokemon so our legacy fallback never rolls a second time. Direct
+# Pokemon.new paths (older engines, Radar replacements, forms) still need it.
+module HoennNativeKIFGeneratedWildItems
+  def pbGenerateWildPokemon(*args)
+    pokemon = super
+    pokemon.instance_variable_set(:@hno_wild_item_rolled, true) if pokemon
+    pokemon
+  end
+end
+Object.prepend(HoennNativeKIFGeneratedWildItems)

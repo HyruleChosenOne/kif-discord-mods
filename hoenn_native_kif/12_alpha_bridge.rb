@@ -9,6 +9,7 @@ module HoennNativeKIFAlphaBridge
 
   def self.roll(event)
     return unless available? && event && event.pokemon
+    return if HoennNativeKIF.safari_map? # No Alpha encounters in Safari.
     return if event.instance_variable_get(:@hno_alpha_rolled)
     event.instance_variable_set(:@hno_alpha_rolled, true)
     return if event.pokemon.alpha?

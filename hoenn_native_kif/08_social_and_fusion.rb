@@ -367,6 +367,7 @@ module HoennNativeKIFSocial
 
   def self.reason(ev, frame)
     return :not_ours unless event_ours?(ev) && !ev.instance_variable_get(:@hno_radar_stationary)
+    return :fighting if ev.instance_variable_get(:@hno_turf_busy)
     return :no_pokemon unless ev.respond_to?(:pokemon) && ev.pokemon
     return :state unless !ev.respond_to?(:current_state) || ev.current_state == :ROAMING
     return :jumping if ev.respond_to?(:jumping?) && ev.jumping?
@@ -558,6 +559,7 @@ module HoennNativeKIFSocial
   end
 
   def self.tick
+    return if HoennNativeKIF.safari_map?
     return unless $game_map && $game_player && $scene && $scene.is_a?(Scene_Map)
     frame = Graphics.frame_count
     if @last_map != $game_map.object_id

@@ -14,7 +14,9 @@ module HoennNativeKIFSettings
     :hno_shiny_chime => 0,
     :hno_shiny_persist => 0,
     :hno_social => 0,
-    :hno_social_chance => 15
+    :hno_social_chance => 15,
+    :hno_territorial_evo_test => 1,
+    :hno_territorial_battle_test => 1
   }
   def self.get(key)
     return DEFAULTS[key] unless defined?(::ModSettingsMenu) && ::ModSettingsMenu.respond_to?(:get)
@@ -35,6 +37,8 @@ module HoennNativeKIFSettings
   def self.shiny_persistence?; get(:hno_shiny_persist) == 0; end
   def self.social?; get(:hno_social) == 0; end
   def self.social_chance; [[get(:hno_social_chance), 0].max, 100].min; end
+  def self.territorial_battle_test?; get(:hno_territorial_battle_test) == 0; end
+  def self.territorial_evo_test?; get(:hno_territorial_evo_test) == 0; end
   def self.population_limit; [[get(:hno_density), 1].max, 25].min; end
   def self.register_settings
     return unless defined?(::ModSettingsMenu) && ::ModSettingsMenu.respond_to?(:register)
@@ -51,7 +55,9 @@ module HoennNativeKIFSettings
       [:hno_shiny_chime, "Shiny spawn chime", ["On", "Off"], "Play the discovery sound when a shiny overworld Pokemon spawns."],
       [:hno_shiny_persist, "Shiny map persistence", ["On", "Off"], "Protect shiny overworld Pokemon from distance despawn and population eviction until map exit."],
       [:hno_social, "Wild Pokemon interactions", ["On", "Off"], "Allow nearby calm wild Pokemon to greet and play briefly."],
-      [:hno_social_chance, "Social encounter chance (%)", nil, "Chance of a social reaction when an eligible pair meets. Default 15%."]
+      [:hno_social_chance, "Social encounter chance (%)", nil, "Chance of a social reaction when an eligible pair meets. Default 15%."],
+      [:hno_territorial_battle_test, "Territorial battle test", ["On", "Off"], "Force a fight when two eligible Pokemon are next to each other. Personal testing only."],
+      [:hno_territorial_evo_test, "Territorial evolution test", ["On", "Off"], "Force the rare post-fight evolution roll to succeed. Personal testing only."]
     ]
     entries.each do |key, name, values, description|
       if [:hno_density, :hno_fusion, :hno_interval, :hno_town_water_cap, :hno_route_water_cap, :hno_social_chance].include?(key)

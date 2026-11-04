@@ -34,6 +34,7 @@ HoennNativeKIF.log('Loaded Compatibility Expansion v0.9')
 module HoennNativeKIFInteraction
   def start
     if is_a?(DynamicOverworldPokemonEvent) && respond_to?(:pokemon) && pokemon
+      return HoennNativeKIFSafari.start_encounter(self) if HoennNativeKIF.safari_map?
       return HoennNativeKIFSurprise.start_battle(self)
     end
     super
@@ -99,3 +100,61 @@ end
 Object.prepend(HoennNativeKIFFusionAnnouncement)
 
 # Self-contained screen-space fusion burst
+
+# Safari Pokemon still roam, but the encounter uses Safari Balls, not a normal battle.
+module HoennNativeKIFSafari
+  def self.with_pokemon(pkmn)
+    previous = @active_pokemon
+    @active_pokemon = pkmn
+    yield
+  ensure
+    @active_pokemon = previous
+  end
+
+  def self.active_pokemon
+    @active_pokemon
+  end
+
+  def self.start_encounter(event)
+    return unless event && event.respond_to?(:pokemon) && event.pokemon
+    return if event.instance_variable_get(:@_hno_safari_busy)
+    return if $PokemonTemp && $PokemonTemp.prevent_ow_battles
+    event.instance_variable_set(:@_hno_safari_busy, true)
+    begin
+      pkmn = event.pokemon
+      HoennNativeKIFSafari.with_pokemon(pkmn) do
+        pbSafariBattle(pkmn.species, pkmn.level)
+      end
+      # A Safari encounter ends when the Pokemon is caught or runs away.
+      event.erase
+      $PokemonTemp.overworld_pokemon_on_map.delete(event.id) if $PokemonTemp && $PokemonTemp.overworld_pokemon_on_map
+      $game_map.events.delete(event.id) if $game_map && $game_map.events
+      if $PokemonTemp && $PokemonTemp.tempEvents
+        $PokemonTemp.tempEvents.each_value { |events| events.delete_if { |e| e && e.id == event.id && e.map_id == event.map_id } }
+      end
+    ensure
+      event.instance_variable_set(:@_hno_safari_busy, false)
+    end
+  end
+end
+
+# Aggressive Pokemon can also bump into the player inside Safari.
+module HoennNativeKIFSafariBattlePatch
+  def overworldPokemonBattle(*args)
+    if is_a?(DynamicOverworldPokemonEvent) && HoennNativeKIF.safari_map?
+      return HoennNativeKIFSafari.start_encounter(self)
+    end
+    super
+  end
+end
+OverworldPokemonEvent.prepend(HoennNativeKIFSafariBattlePatch)
+
+# Safari generates a new Pokemon by default. Use the one players actually saw.
+module HoennNativeKIFSafariPokemonPatch
+  def pbGenerateWildPokemon(species, level, *args)
+    visible = HoennNativeKIFSafari.active_pokemon
+    return visible if visible && visible.species == species && visible.level == level
+    super
+  end
+end
+Object.prepend(HoennNativeKIFSafariPokemonPatch)
