@@ -1,7 +1,7 @@
 {
   "id": "hoenn_essentials",
   "name": "Hoenn Essentials",
-  "version": "1.0.8-rc3",
+  "version": "1.2.0-rc4",
   "author": "TheMagnumChad",
   "description": "PokéNav, trainer relationships, and dynamic weather with encounters.",
   "scripts": [
@@ -18,6 +18,8 @@
     "23_challenge_scene.rb",
     "24_challenge_screen.rb",
     "25_suite_fixes.rb",
-    "26_rc2_settings.rb"
-  ]
+    "26_rc2_settings.rb",
+	"27_multiplayer_weather.rb"
+  ],
+  "enabled": true
 }
