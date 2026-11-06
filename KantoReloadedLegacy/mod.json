@@ -1,12 +1,20 @@
 {
   "name": "Kanto Reloaded Legacy",
   "id": "kantoreloadedlegacy",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "author": "Stonewall",
   "requires_kif": ">=1.0.7",
   "description": "The original Kanto Reloaded, made to work on KIF while the new Kanto Reloaded is built. It can't run together with Kanto Reloaded.",
   "tags": ["Gameplay", "UI", "QoL"],
   "dependencies": [],
   "incompatible": ["KantoReloaded"],
-  "scripts": ["Bootstrap.rb"]
+  "scripts": ["Bootstrap.rb"],
+  "api_version": 1,
+  "permissions": ["save_files", "clipboard", "marshal", "eval"],
+  "permission_notes": {
+    "save_files": "Keeps its settings for every save, and a backup of each save before an update, in the game's save folder.",
+    "clipboard": "Copies text you choose to the clipboard.",
+    "marshal": "Reads your save files to show what's in them.",
+    "eval": "Reads one of the game's global values by name for the Overworld Menu."
+  }
 }

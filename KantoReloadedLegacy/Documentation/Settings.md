@@ -33,12 +33,11 @@ change. Existing per-save values are copied to global storage the first time a
 global setting is loaded, but never overwrite a global value that already
 exists.
 
-KIF keeps its saves in a different folder than the old game did, so on first
-start (no settings file yet) Legacy copies the old `KantoReloadedSettings.json`
-from the old game's save folder (`kurayinfinitefusion`, next to KIF's), or on
-JoiPlay from the old `Kanto Reloaded` user-data folder. The old file is only
-read. A fresh
-install with no old file writes nothing at start.
+On first start (no settings file yet) Legacy copies an old
+`KantoReloadedSettings.json` from the game's save folder. The old file is only
+read. Old Kuray's save folder and JoiPlay's old user-data folder were outside the
+game, which KIF 2.0.0's Mod Safety doesn't allow, so since 1.6.2 they're no longer
+read. A fresh install with no old file writes nothing at start.
 
 The global settings are Cursor Color, Overworld Menu, Reloaded EBDX Cursor,
 Effectiveness Borders and its five colors, Wild Link's Sprites, Reloaded PC's

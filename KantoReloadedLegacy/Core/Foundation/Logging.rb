@@ -60,17 +60,23 @@ module KantoReloaded
         values
       end
 
+      # C:/Users/<name>, /home/<name> or /Users/<name> at the start of the
+      # save folder, or nil
+      def home_folder
+        save = defined?(System) && System.respond_to?(:data_directory) ? (System.data_directory.to_s rescue "") : ""
+        m = save.tr("\\", "/").match(%r{\A((?:[A-Za-z]:)?/(?:Users|home)/[^/]+)}i)
+        return m ? m[1] : nil
+      end
+
       def sanitize(value)
         text = value.to_s.gsub("\\", "/")
         replacements = []
         replacements << [File.expand_path(ROOT).gsub("\\", "/"), "/#{File.basename(ROOT)}"]
         replacements << [File.expand_path(GAME_ROOT).gsub("\\", "/"), "/Game"]
-        [ENV["TEMP"], ENV["TMP"], ENV["TMPDIR"]].compact.each do |path|
-          replacements << [File.expand_path(path).gsub("\\", "/"), "/Temp"]
-        end
-        [ENV["USERPROFILE"], ENV["HOME"]].compact.each do |path|
-          replacements << [File.expand_path(path).gsub("\\", "/"), "/User"]
-        end
+        # the home folder, from where the saves are (nothing of the
+        # computer's settings is read: KIF 2.0.0's Mod Safety)
+        home = home_folder
+        replacements << [home, "/User"] if home
         replacements.sort_by { |entry| -entry[0].length }.each do |root, replacement|
           next if root.empty?
           text = text.gsub(/#{Regexp.escape(root)}(?=\/|\z)/i, replacement)

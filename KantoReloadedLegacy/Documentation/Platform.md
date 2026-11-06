@@ -28,15 +28,17 @@ KantoReloaded::Platform.glob(File.join(path, "**", "*.json"))
 `display_path` returns a log-safe relative or basename-only path. It should be
 used in user-facing errors instead of exposing a full local filesystem path.
 
-The temporary and user-data folders are Kanto Reloaded Legacy's own:
-`temporary_directory` is `KantoReloadedLegacy` inside the system temp folder,
-and `user_data_directory` is `%APPDATA%/Kanto Reloaded Legacy` on Windows (or
-`~/.local/share/Kanto Reloaded Legacy` elsewhere).
+`user_data_directory` is `Kanto Reloaded Legacy` inside the game's save folder
+(`System.data_directory`), or Legacy's own mod folder when there's none. Nothing
+outside the game and its save folder is read or written, no program is started
+and nothing of the computer's settings (`ENV`) is read: KIF 2.0.0's Mod Safety
+grades those red (1.6.2). Proton is what KIF's own check says
+(`KIF::ModCompat.wine?`), and a phone is JoiPlay's marker, Ruby saying android,
+or `KIF.mobile?`.
 
-Windows and Proton expose guarded clipboard and URL-opening adapters. JoiPlay
-feature-detects clipboard writes through `Input.clipboard=` but continues to
-report desktop URL opening as unavailable. Unknown runtimes report both
-capabilities as unavailable so callers can provide an in-game fallback.
+Windows and Proton expose a guarded clipboard adapter. JoiPlay feature-detects
+clipboard writes through `Input.clipboard=`. Unknown runtimes report it as
+unavailable so callers can provide an in-game fallback.
 
 ## JSON
 

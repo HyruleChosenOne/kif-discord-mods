@@ -1,5 +1,19 @@
 # Kanto Reloaded Legacy Changelog
 
+## Kanto Reloaded Legacy Update #10 - Mod Safety
+
+v1.6.2
+
+Release Date: November 5, 2026
+
+### SUMMARY
+Kanto Reloaded Legacy is ready for KIF 2.0.0's Mod Safety: a new install gets one notice instead of being held until you allow it, and it no longer reads or writes anything outside the game.
+
+### CHANGES
+- It says what it needs when you install it, so KIF lets a new install in with one notice. On phones where KIF can't keep your OK between launches (Kirin), it now loads anyway
+- Nothing outside the game is read or written any more: its settings for every save stay in the game's save folder, as they already did on PC. On JoiPlay they were kept in a folder outside the game, so they start fresh once
+- Proton, the Steam Deck and phones are recognised by KIF's own checks
+
 ## Kanto Reloaded Legacy Update #9 - Hotfixes
 
 v1.6.1
@@ -11,8 +25,8 @@ Double Abilities has no banned pairs any more, Wonder Guard works as normal agai
 
 ### CHANGES
 - Double Abilities no longer bans any pair of abilities: Illusion + Imposter, Wonder Guard + Sturdy, Huge Power + Pure Power, Multiscale + Shadow Shield, Huge Power or Pure Power + Water Bubble, and Shadow Tag + Perish Body can all be paired now. The same ability twice still counts once
-- Wonder Guard is no longer limited to blocking three damaging moves per battle. As one of two abilities, it blocks every damaging move that isn't super effective for the whole battle
-- Trainer Adaptation's description now properly says one of its changes can be a Counter Pokemon, added to a team with room even with Team Expansion off, or swapped in.
+- Wonder Guard is no longer limited to blocking three damaging moves per battle. As one of two abilities, or alone from the old Dynamic Abilities, it blocks every damaging move that isn't super effective for the whole battle
+- Trainer Adaptation's description says one of its changes can be a Counter Pokemon, added to a team with room even with Team Expansion off, or swapped in. This is how it has always worked
 
 ## Kanto Reloaded Legacy Update #8 - KIF Support
 

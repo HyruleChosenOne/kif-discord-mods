@@ -9,8 +9,6 @@ module KantoReloaded
   module GlobalSettings
     SCHEMA_VERSION = 1
     FILE_NAME = "KantoReloadedSettings.json"
-    # old KIF's save folder (%APPDATA%\kurayinfinitefusion), next to KIF's
-    OLD_FOLDERS = ["kurayinfinitefusion"].freeze
 
     @data = nil
     @loaded = false
@@ -178,9 +176,10 @@ module KantoReloaded
         true
       end
 
-      # First start on KIF: the old Kanto Reloaded kept this file in old
-      # KIF's save folder (on JoiPlay in "Kanto Reloaded"). It's read once
-      # and copied; the old file is never changed
+      # First start: a file the old Kanto Reloaded left in the game's save
+      # folder is read once and copied (the old file is never changed). Old
+      # Kuray's save folder and JoiPlay's old folder were outside the game,
+      # which KIF 2.0.0's Mod Safety doesn't allow, so they're no longer read
       def import_old_settings(path)
         source = old_settings_candidates(path).find { |candidate| File.file?(candidate) }
         return false unless source
@@ -194,11 +193,8 @@ module KantoReloaded
       end
 
       def old_settings_candidates(path)
-        list = OLD_FOLDERS.map { |name| File.join(File.dirname(File.dirname(path)), name, FILE_NAME) }
-        if (KantoReloaded::Platform.joiplay? rescue false)
-          user = KantoReloaded::Platform.user_data_directory.to_s rescue ""
-          list << File.join(File.dirname(user), "Kanto Reloaded", FILE_NAME) unless user.empty?
-        end
+        save = defined?(RTP) && RTP.respond_to?(:getSaveFolder) ? (RTP.getSaveFolder.to_s rescue "") : ""
+        list = save.empty? ? [] : [File.join(save, FILE_NAME)]
         own = File.expand_path(path).downcase
         list.map { |candidate| File.expand_path(candidate) }.reject { |candidate| candidate.downcase == own }.uniq
       end

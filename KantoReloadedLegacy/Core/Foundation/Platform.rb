@@ -2,7 +2,10 @@
 # Kanto Reloaded Platform
 #==============================================================================
 # Runtime detection and portable filesystem/JSON helpers for Windows,
-# Proton/Wine, JoiPlay, and unknown hosts.
+# Proton/Wine, JoiPlay, and unknown hosts. Nothing here starts a program,
+# reads the computer's settings or touches files outside the game and its
+# save folder (KIF 2.0.0's Mod Safety, 1.6.2): Proton and phones are what
+# KIF's own checks say.
 #==============================================================================
 
 module KantoReloaded
@@ -20,13 +23,11 @@ module KantoReloaded
     CAPABILITIES = {
       :windows => [
         :gameplay, :mod_manager, :manual_mods, :settings, :save_data,
-        :filesystem, :json, :mouse, :clipboard, :open_url,
-        :open_folder
+        :filesystem, :json, :mouse, :clipboard
       ],
       :proton => [
         :gameplay, :mod_manager, :manual_mods, :settings, :save_data,
-        :filesystem, :json, :mouse, :clipboard, :open_url,
-        :open_folder
+        :filesystem, :json, :mouse, :clipboard
       ],
       :joiplay => [
         :gameplay, :mod_manager, :manual_mods, :settings, :save_data,
@@ -103,38 +104,6 @@ module KantoReloaded
         true
       rescue StandardError => e
         log_adapter_failure(:clipboard, e)
-        false
-      end
-
-      def open_url(url)
-        return false unless supports?(:open_url)
-        value = url.to_s.strip
-        return false unless value =~ /\Ahttps?:\/\/[^\s]+\z/i
-        opened = if proton? && !windows_environment?
-                   system("xdg-open", value)
-                 else
-                   system("cmd", "/c", "start", "", value)
-                 end
-        raise "The operating system could not open the URL." unless opened
-        true
-      rescue StandardError => e
-        log_adapter_failure(:open_url, e)
-        false
-      end
-
-      def open_folder(path)
-        return false unless supports?(:open_folder)
-        folder = File.expand_path(path.to_s)
-        return false unless directory?(folder)
-        opened = if proton? && !windows_environment?
-                   system("xdg-open", folder)
-                 else
-                   system("explorer.exe", folder.tr("/", "\\"))
-                 end
-        raise "The operating system could not open the folder." unless opened
-        true
-      rescue StandardError => e
-        log_adapter_failure(:open_folder, e)
         false
       end
 
@@ -246,20 +215,12 @@ module KantoReloaded
         adapter[:generate].call(value)
       end
 
-      def temporary_directory
-        candidates = [environment("TEMP"), environment("TMP"), environment("TMPDIR"), GAME_ROOT]
-        root = candidates.find { |path| !path.empty? && directory?(path) } || GAME_ROOT
-        path = File.expand_path(File.join(root, "KantoReloadedLegacy"))
-        Dir.mkdir(path) unless directory?(path)
-        normalize_path(path)
-      end
-
+      # Kanto Reloaded Legacy's folder in the game's save folder (the mod's
+      # own folder when there's none)
       def user_data_directory
-        app_data = environment("APPDATA")
-        return absolute_path(File.join(app_data, "Kanto Reloaded Legacy"), app_data) if windows? && !app_data.empty?
-        home = environment("HOME")
-        return absolute_path(File.join(home, ".local", "share", "Kanto Reloaded Legacy"), home) unless home.empty?
-        normalize_path(GAME_ROOT)
+        save = (System.data_directory.to_s rescue "") if defined?(System) && System.respond_to?(:data_directory)
+        return absolute_path(File.join(save, "Kanto Reloaded Legacy"), save) if save && !save.empty? && directory?(save)
+        normalize_path(ROOT)
       end
 
       def display_path(path)
@@ -292,26 +253,23 @@ module KantoReloaded
       end
 
       def windows_environment?
-        probe = [(RUBY_PLATFORM rescue ""), environment("OS")].join(" ").downcase
+        engine = defined?(System) && System.respond_to?(:platform) ? (System.platform.to_s rescue "") : ""
+        probe = [(RUBY_PLATFORM rescue ""), engine].join(" ").downcase
         !!(probe =~ /windows|mingw|mswin|cygwin/)
       end
 
+      # Wine / Proton (Linux, Steam Deck), as KIF's own check says
       def proton_environment?
-        keys = [
-          "STEAM_COMPAT_DATA_PATH", "STEAM_COMPAT_CLIENT_INSTALL_PATH",
-          "PROTON_VERSION", "WINEPREFIX", "WINELOADERNOEXEC"
-        ]
-        keys.any? { |key| !environment(key).empty? }
+        return false unless defined?(::KIF::ModCompat) && ::KIF::ModCompat.respond_to?(:wine?)
+        (::KIF::ModCompat.wine? rescue false) ? true : false
       end
 
+      # A phone: JoiPlay's marker, Ruby saying android, or KIF's own check
+      # (Kirin and the other Android players)
       def joiplay_environment?
         platform = (RUBY_PLATFORM rescue "").to_s.downcase
-        keys = ["JOIPLAY", "ANDROID_ROOT", "ANDROID_DATA", "ANDROID_STORAGE"]
-        platform.include?("android") || defined?(JoiPlay) || keys.any? { |key| !environment(key).empty? }
-      end
-
-      def environment(key)
-        (ENV[key] rescue nil).to_s.strip
+        kif = defined?(::KIF) && ::KIF.respond_to?(:mobile?) && (::KIF.mobile? rescue false)
+        platform.include?("android") || defined?(JoiPlay) || kif ? true : false
       end
 
       def comparable_path(path)
