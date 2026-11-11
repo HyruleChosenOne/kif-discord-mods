@@ -1,0 +1,16 @@
+{
+  "id": "discord_rich_presence",
+  "name": "Discord Rich Presence",
+  "version": "0.8",
+  "author": "Hyrule",
+  "description": "Broadcasts your live KIF adventure to Discord Rich Presence: full-size custom fusion sprites, stylized Kanto & Sevii location pixel art, gym badges, Pokédex, caught shinies, fusions, battle status, and Solo/Multiplayer session info with full in-game settings.",
+  "tags": ["QoL"],
+  "api_version": 1,
+  "requires_kif": ">=1.2.0",
+  "permissions": ["outside_files", "game_files"],
+  "permission_notes": {
+    "outside_files": "Connects to the local Discord desktop client via Windows Named Pipe (discord-ipc).",
+    "game_files": "Saves your Rich Presence configuration and logs inside the mod folder."
+  },
+  "scripts": ["001_Config.rb", "002_IPC.rb", "003_Presence.rb", "004_ModSettings.rb"]
+}
